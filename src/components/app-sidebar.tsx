@@ -59,10 +59,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain
           items={[
-            { title: "Dashboard", url: "#", icon: LayoutDashboard },
-            { title: "Lançamentos", url: "#", icon: ArrowLeftRight },
-            { title: "Metas", url: "#", icon: IconChartBar },
-            { title: "Reserva de Emergência", url: "#", icon: PiggyBank },
+            { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+            { title: "Lançamentos", url: "/lancamentos", icon: ArrowLeftRight },
+            { title: "Metas", url: "/metas", icon: IconChartBar },
+            {
+              title: "Reserva de Emergência",
+              url: "/reserva-emergencia",
+              icon: PiggyBank,
+            },
           ]}
         />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
