@@ -7,28 +7,28 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { useAuth } from '@/contexts/AuthContext';
-import api from '@/lib/api';
+import { useAuth } from "@/contexts/AuthContext";
+import api from "@/lib/api";
 
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
 
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       login(email, senha);
-      router.push('/');
+      router.push("/dashboard");
     } catch {
-      setError('Email ou senha inválidos');
+      setError("Email ou senha inválidos");
     } finally {
       setLoading(false);
     }

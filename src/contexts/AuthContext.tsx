@@ -1,7 +1,13 @@
-"use client"
-import api, { authApi } from '@/lib/api';
-import { User } from '@/types/user';
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+"use client";
+import api, { authApi } from "@/lib/api";
+import { User } from "@/types/user";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 
 interface AuthContextData {
   isAuthenticated: boolean;
@@ -15,25 +21,33 @@ const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(() => {
-    const storedUser = localStorage.getItem('user');
-    return storedUser ? JSON.parse(storedUser) : null;
+    try {
+      const storedUser = localStorage.getItem("user");
+      // Protege contra 'undefined', undefined, null ou valores inválidos
+      if (!storedUser || storedUser === "undefined") return null;
+      return JSON.parse(storedUser);
+    } catch (err) {
+      return null;
+    }
   });
 
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem("token");
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const refreshToken = localStorage.getItem('refreshToken');
-    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem("token");
+    const refreshToken = localStorage.getItem("refreshToken");
+    const storedUser = localStorage.getItem("user");
 
     if (token && refreshToken && storedUser) {
       try {
@@ -41,19 +55,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAuthenticated(true);
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
       } catch (err) {
-        console.error('Erro ao carregar usuário:', err);
+        console.error("Erro ao carregar usuário:", err);
         logout();
       }
     }
   }, []);
 
-  const login = useCallback(async (email: string, senha: string) => {
-    const response = await authApi.post('/auth/login/', { email, senha });
+  const login = useCallback(async (login: string, password: string) => {
+    const response = await authApi.post("/auth/login", { login, password });
     const { access: token, refresh, usuario } = response.data;
 
-    localStorage.setItem('token', token);
-    localStorage.setItem('refreshToken', refresh);
-    localStorage.setItem('user', JSON.stringify(usuario));
+    localStorage.setItem("token", token);
+    localStorage.setItem("refreshToken", refresh);
+    localStorage.setItem("user", JSON.stringify(usuario));
 
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
@@ -65,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.clear();
     setUser(null);
     setIsAuthenticated(false);
-    window.location.href = '/auth/login';
+    window.location.href = "/auth/login";
   }, []);
 
   return (
