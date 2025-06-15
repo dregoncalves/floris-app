@@ -1,3 +1,4 @@
+"use client";
 import { LoginForm } from "@/components/auth/login-form";
 
 export default function LoginPage() {
@@ -7,5 +8,5 @@ export default function LoginPage() {
         <LoginForm />
       </div>
     </div>
-  )
+  );
 }
