@@ -3,6 +3,7 @@ import { Nunito } from "next/font/google";
 import { PT_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -44,7 +45,7 @@ export default function RootLayout({
             system: "system",
           }}
         >
-          {children}
+          <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>
       </body>
     </html>

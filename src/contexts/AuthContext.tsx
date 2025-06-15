@@ -1,75 +1,78 @@
-// src/contexts/AuthContext.tsx
+"use client"
+import api, { authApi } from '@/lib/api';
+import { User } from '@/types/user';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-import { createContext, useState, useEffect, ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { User } from "@/types/user";
-
-interface AuthContextType {
+interface AuthContextData {
+  isAuthenticated: boolean;
   user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
-  login: (data: {
-    accessToken: string;
-    refreshToken: string;
-    user: User;
-  }) => void;
+  login: (email: string, senha: string) => Promise<void>;
   logout: () => void;
 }
 
-export const AuthContext = createContext<AuthContextType>(
-  {} as AuthContextType
-);
+const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [refreshToken, setRefreshToken] = useState<string | null>(null);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
-  const router = useRouter();
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!localStorage.getItem('token');
+  });
 
   useEffect(() => {
-    const storedAccessToken = localStorage.getItem("accessToken");
-    const storedRefreshToken = localStorage.getItem("refreshToken");
-    const storedUser = localStorage.getItem("user");
+    const token = localStorage.getItem('token');
+    const refreshToken = localStorage.getItem('refreshToken');
+    const storedUser = localStorage.getItem('user');
 
-    if (storedAccessToken && storedRefreshToken && storedUser) {
-      setAccessToken(storedAccessToken);
-      setRefreshToken(storedRefreshToken);
-      setUser(JSON.parse(storedUser));
+    if (token && refreshToken && storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+        setIsAuthenticated(true);
+        api.defaults.headers.common.Authorization = `Bearer ${token}`;
+      } catch (err) {
+        console.error('Erro ao carregar usuário:', err);
+        logout();
+      }
     }
   }, []);
 
-  const login = (data: {
-    accessToken: string;
-    refreshToken: string;
-    user: User;
-  }) => {
-    setAccessToken(data.accessToken);
-    setRefreshToken(data.refreshToken);
-    setUser(data.user);
+  const login = useCallback(async (email: string, senha: string) => {
+    const response = await authApi.post('/auth/login/', { email, senha });
+    const { access: token, refresh, usuario } = response.data;
 
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
-    localStorage.setItem("user", JSON.stringify(data.user));
-  };
+    localStorage.setItem('token', token);
+    localStorage.setItem('refreshToken', refresh);
+    localStorage.setItem('user', JSON.stringify(usuario));
 
-  const logout = () => {
-    setAccessToken(null);
-    setRefreshToken(null);
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+    setUser(usuario);
+    setIsAuthenticated(true);
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.clear();
     setUser(null);
-
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-
-    router.push("/login");
-  };
+    setIsAuthenticated(false);
+    window.location.href = '/auth/login';
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user, accessToken, refreshToken, login, logout }}
-    >
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+export default AuthContext;

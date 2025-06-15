@@ -1,57 +1,41 @@
 "use client";
 
 import React, { useState, useContext } from "react";
-import { AuthService } from "@/services/authService";
-import { AuthContext } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/api';
 
-interface LoginFormProps {
-  className?: string;
-}
-
-export function LoginForm({ className }: LoginFormProps) {
+export default function LoginPage() {
+  const { login } = useAuth();
   const router = useRouter();
-  const { login } = useContext(AuthContext);
 
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
+    setError('');
+
     try {
-      const response = await AuthService.login({
-        login: email,
-        password: senha,
-      });
-
-      login({
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-        user: response.user,
-      });
-
-      router.push("/private/dashboard");
-    } catch (err: any) {
-      console.error("Erro ao fazer login:", err);
-      setError("Usuário ou senha inválidos.");
+      login(email, senha);
+      router.push('/');
+    } catch {
+      setError('Email ou senha inválidos');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className={cn("flex min-h-screen items-center justify-center", className)}
-    >
+    <div className="flex min-h-screen items-center justify-center">
       <Card className="w-full max-w-md p-8 shadow-lg">
         <CardContent className="space-y-6">
           <div className="text-center">
