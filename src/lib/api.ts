@@ -1,78 +1,24 @@
+// src/lib/api.ts
 import axios from "axios";
 
-// Usado para login e refresh (não intercepta 401)
-export const authApi = axios.create({
-  baseURL: "http://localhost:8080",
+const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+export const api = axios.create({
+  baseURL,
+  withCredentials: true, // ESSENCIAL para o navegador enviar cookies httpOnly
 });
 
-// Usado para tudo que precisa de token e interceptação
-const api = axios.create({
-  baseURL: "http://localhost:8080",
-});
-
-let isRefreshing = false;
-let failedQueue: any[] = [];
-
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else prom.resolve(token);
-  });
-  failedQueue = [];
-};
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers["Authorization"] = `Bearer ${token}`;
-  return config;
-});
-
+// O interceptor de resposta agora serve apenas para capturar um erro de
+// autenticação e notificar a aplicação para deslogar o usuário.
 api.interceptors.response.use(
-  (res) => res,
-  async (err) => {
-    const originalRequest = err.config;
-
-    if (
-      (err.response?.status === 401 || err.response?.status === 403) &&
-      !originalRequest._retry
-    ) {
-      originalRequest._retry = true;
-      const refreshToken = localStorage.getItem("refreshToken");
-
-      if (!refreshToken) return Promise.reject(err);
-
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        }).then((token) => {
-          originalRequest.headers["Authorization"] = `Bearer ${token}`;
-          return api(originalRequest);
-        });
-      }
-
-      isRefreshing = true;
-
-      try {
-        const { data } = await authApi.post("/auth/refresh", { refreshToken });
-
-        localStorage.setItem("token", data.access);
-        localStorage.setItem("refreshToken", data.refresh);
-
-        api.defaults.headers.common["Authorization"] = `Bearer ${data.access}`;
-        originalRequest.headers["Authorization"] = `Bearer ${data.access}`;
-        processQueue(null, data.access);
-
-        return api(originalRequest);
-      } catch (error) {
-        processQueue(error, null);
-        return Promise.reject(error);
-      } finally {
-        isRefreshing = false;
-      }
+  (response) => response, // Se a resposta for sucesso, não faz nada.
+  (error) => {
+    // Se a API retornar 401, significa que a sessão é inválida ou expirou.
+    if (error.response?.status === 401) {
+      // Disparamos um evento global. O AuthContext irá "ouvir" esse evento e
+      // executará a função de logout. Isso evita importações circulares.
+      window.dispatchEvent(new Event("auth-error"));
     }
-
-    return Promise.reject(err);
+    return Promise.reject(error);
   }
 );
-
-export default api;

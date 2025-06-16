@@ -1,92 +1,105 @@
 "use client";
-import api, { authApi } from "@/lib/api";
-import { User } from "@/types/user";
+
 import React, {
   createContext,
   useContext,
   useState,
   useEffect,
-  useCallback,
+  ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+import { User } from "@/types/user";
 
-interface AuthContextData {
-  isAuthenticated: boolean;
+interface AuthContextType {
   user: User | null;
-  login: (email: string, senha: string) => Promise<void>;
-  logout: () => void;
+  isAuthenticated: boolean;
+  login: (userData: User) => void;
+  logout: () => Promise<void>;
+  isLoading: boolean; // Renomeado de isHydrated para maior clareza
 }
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Sempre começa checando
+  const router = useRouter();
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      // Protege contra 'undefined', undefined, null ou valores inválidos
-      if (!storedUser || storedUser === "undefined") return null;
-      return JSON.parse(storedUser);
-    } catch (err) {
-      return null;
-    }
-  });
-
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return !!localStorage.getItem("token");
-  });
-
+  // Este useEffect é o coração da nova autenticação
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const refreshToken = localStorage.getItem("refreshToken");
-    const storedUser = localStorage.getItem("user");
-
-    if (token && refreshToken && storedUser) {
+    // 1. Função que verifica se o usuário já está logado
+    const checkAuthStatus = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-        setIsAuthenticated(true);
-        api.defaults.headers.common.Authorization = `Bearer ${token}`;
-      } catch (err) {
-        console.error("Erro ao carregar usuário:", err);
-        logout();
+        // O navegador envia os cookies automaticamente com esta chamada
+        const response = await api.get<User>("/users/me");
+        // Se a API retornar dados, o usuário está autenticado
+        setUser(response.data);
+      } catch (error) {
+        // Se der erro (ex: 401), o usuário não tem sessão ativa
+        console.log(error);
+        setUser(null);
+      } finally {
+        // Finaliza o estado de carregamento
+        setIsLoading(false);
       }
+    };
+
+    checkAuthStatus();
+
+    // 2. Ouvinte para o evento de erro de autenticação disparado pelo interceptor da API
+    const handleAuthError = () => logout();
+    window.addEventListener("auth-error", handleAuthError);
+
+    // 3. Limpa o ouvinte quando o componente for desmontado
+    return () => {
+      window.removeEventListener("auth-error", handleAuthError);
+    };
+    // O array de dependências vazio `[]` garante que isso rode apenas uma vez.
+    // O `logout` precisaria ser envolvido em `useCallback` para ser adicionado aqui,
+    // mas para esta lógica, não é estritamente necessário.
+  }, []);
+
+  const login = (userData: User) => {
+    setUser(userData);
+    router.push("/dashboard");
+  };
+
+  const logout = async () => {
+    // Se já estiver deslogado, não faz nada
+    if (!user) return;
+
+    try {
+      // Chama o endpoint de logout da API para que ela invalide os cookies
+      await api.post("/auth/logout");
+    } catch (error) {
+      console.error("Erro ao fazer logout na API:", error);
+    } finally {
+      // Limpa o estado no front-end e redireciona, independentemente da resposta da API
+      setUser(null);
+      router.push("/auth/login");
     }
-  }, []);
-
-  const login = useCallback(async (login: string, password: string) => {
-    const response = await authApi.post("/auth/login", { login, password });
-    const { access: token, refresh, usuario } = response.data;
-
-    localStorage.setItem("token", token);
-    localStorage.setItem("refreshToken", refresh);
-    localStorage.setItem("user", JSON.stringify(usuario));
-
-    api.defaults.headers.common.Authorization = `Bearer ${token}`;
-
-    setUser(usuario);
-    setIsAuthenticated(true);
-  }, []);
-
-  const logout = useCallback(() => {
-    localStorage.clear();
-    setUser(null);
-    setIsAuthenticated(false);
-    window.location.href = "/auth/login";
-  }, []);
+  };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        login,
+        logout,
+        isLoading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export default AuthContext;
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+  }
+  return context;
+};
