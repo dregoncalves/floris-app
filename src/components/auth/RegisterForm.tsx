@@ -7,14 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { User } from "@/types/user";
+import { BirthdayCalendar } from "./BirthdayCalendar";
 
 type RegisterFormProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function RegisterForm({ className, ...props }: RegisterFormProps) {
-  const router = useRouter();
+  const { login } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -30,10 +32,23 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
     const password = formData.get("password") as string;
 
     try {
-      await api.post("/auth/register", { name, username, email, password });
-      router.replace("/auth/login");
+      // Chamada única para o endpoint de registro.
+      // A API em /auth/register já cria o usuário, faz o login (setando os cookies)
+      // e retorna os dados do usuário criado.
+      const response = await api.post<User>("/auth/register", {
+        name,
+        username,
+        email,
+        password,
+      });
+
+      // A função de login do contexto recebe os dados do usuário e cuida do redirecionamento.
+      login(response.data);
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Erro ao registrar.");
+      setError(
+        err?.response?.data?.message ||
+          "Erro ao criar a conta. Verifique os dados informados."
+      );
     } finally {
       setLoading(false);
     }
@@ -95,6 +110,8 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
                   required
                 />
               </div>
+
+              <BirthdayCalendar />
 
               {error && (
                 <div className="text-red-500 text-sm text-center">{error}</div>

@@ -1,99 +1,24 @@
-// services/api.ts
-import axios, { AxiosError } from "axios";
+// src/lib/api.ts
+import axios from "axios";
 
-// Rotas públicas
-const PUBLIC_ROUTES = ["/auth/login", "/auth/register", "/auth/refresh"];
+const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-// Criação da instância Axios
 export const api = axios.create({
-  baseURL: "http://localhost:8080",
-  timeout: 10000,
+  baseURL,
+  withCredentials: true, // ESSENCIAL para o navegador enviar cookies httpOnly
 });
 
-// Funções auxiliares para tokens (pode adaptar para cookies, localStorage, etc)
-const getAccessToken = () =>
-  typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-const getRefreshToken = () =>
-  typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
-const setAccessToken = (token: string) =>
-  typeof window !== "undefined" && localStorage.setItem("accessToken", token);
-
-// Interceptor para adicionar o token nas requests privadas
-api.interceptors.request.use(
-  (config) => {
-    const token = getAccessToken();
-    if (token && !PUBLIC_ROUTES.includes(config.url || "")) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Refresh token logic
-let isRefreshing = false;
-let failedQueue: any[] = [];
-
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
-
-const refreshAccessToken = async () => {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) throw new Error("Refresh token não encontrado");
-  const response = await api.post("/auth/refresh", { refreshToken });
-  const { accessToken } = response.data;
-  setAccessToken(accessToken);
-  return accessToken;
-};
-
-// Interceptor de resposta para 401/403
+// O interceptor de resposta agora serve apenas para capturar um erro de
+// autenticação e notificar a aplicação para deslogar o usuário.
 api.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as any;
-    if (
-      (error.response?.status === 401 || error.response?.status === 403) &&
-      !originalRequest._retry &&
-      !PUBLIC_ROUTES.includes(originalRequest.url)
-    ) {
-      if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers["Authorization"] = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      return refreshAccessToken()
-        .then((newToken) => {
-          processQueue(null, newToken);
-          originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-          return api(originalRequest);
-        })
-        .catch((err) => {
-          processQueue(err, null);
-          // Faça logout do usuário, limpe tokens, etc
-          return Promise.reject(err);
-        })
-        .finally(() => {
-          isRefreshing = false;
-        });
+  (response) => response, // Se a resposta for sucesso, não faz nada.
+  (error) => {
+    // Se a API retornar 401, significa que a sessão é inválida ou expirou.
+    if (error.response?.status === 401) {
+      // Disparamos um evento global. O AuthContext irá "ouvir" esse evento e
+      // executará a função de logout. Isso evita importações circulares.
+      window.dispatchEvent(new Event("auth-error"));
     }
-
     return Promise.reject(error);
   }
 );

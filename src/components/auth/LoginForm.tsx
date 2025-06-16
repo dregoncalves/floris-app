@@ -8,15 +8,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { User } from "@/types/user";
 
 type LoginFormProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
   const { login } = useAuth();
-  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -26,36 +25,27 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    // Pega o campo com name="email" (pode ser e-mail ou username)
     const loginField = formData.get("email") as string;
     const password = formData.get("password") as string;
 
     try {
-      // 1. Login: recebe accessToken e refreshToken
-      const response = await api.post("/auth/login", {
+      const response = await api.post<User>("/auth/login", {
         login: loginField,
         password,
       });
-      const { accessToken, refreshToken } = response.data;
 
-      // 2. Busca o usuário autenticado
-      const meResponse = await api.get("/users/me", {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const user = meResponse.data;
-
-      // 3. Salva no contexto Auth
-      login({ accessToken, refreshToken, user });
-      router.push("/dashboard");
+      login(response.data);
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Erro ao fazer login.");
+      setError(
+        err?.response?.data?.message ||
+          "Erro ao fazer login. Verifique suas credenciais."
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // O restante do seu JSX continua o mesmo...
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
@@ -73,10 +63,11 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
                 <Label htmlFor="email">E-mail ou usuário</Label>
                 <Input
                   id="email"
-                  name="email" // <- ESSENCIAL para funcionar com FormData
+                  name="email"
                   type="text"
                   placeholder="Digite seu e-mail ou usuário"
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -92,9 +83,10 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
                 </div>
                 <Input
                   id="password"
-                  name="password" // <- ESSENCIAL para funcionar com FormData
+                  name="password"
                   type="password"
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -113,15 +105,14 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                <Button variant="outline" type="button" className="w-full">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    x="0px"
-                    y="0px"
-                    width="100"
-                    height="100"
-                    viewBox="0 0 48 48"
-                  >
+                <Button
+                  variant="outline"
+                  type="button"
+                  className="w-full"
+                  disabled
+                >
+                  <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
+                    {/* SVG do Google */}
                     <path
                       fill="#FFC107"
                       d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"

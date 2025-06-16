@@ -8,115 +8,87 @@ import React, {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+import { User } from "@/types/user";
 
-type User = {
-  id: string;
-  email: string;
-  name: string;
-};
-
-type AuthContextProps = {
+interface AuthContextType {
   user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
-  login: (data: {
-    accessToken: string;
-    refreshToken: string;
-    user: User;
-  }) => void;
-  logout: () => void;
   isAuthenticated: boolean;
-  isHydrated: boolean;
-};
+  login: (userData: User) => void;
+  logout: () => Promise<void>;
+  isLoading: boolean; // Renomeado de isHydrated para maior clareza
+}
 
-const AuthContext = createContext<AuthContextProps | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [refreshToken, setRefreshToken] = useState<string | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Sempre começa checando
+  const router = useRouter();
 
+  // Este useEffect é o coração da nova autenticação
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const storedAccessToken = localStorage.getItem("accessToken");
-    const storedRefreshToken = localStorage.getItem("refreshToken");
-
-    let parsedUser: User | null = null;
-    if (storedUser && storedUser !== "undefined") {
+    // 1. Função que verifica se o usuário já está logado
+    const checkAuthStatus = async () => {
       try {
-        parsedUser = JSON.parse(storedUser);
-      } catch {
-        parsedUser = null;
+        // O navegador envia os cookies automaticamente com esta chamada
+        const response = await api.get<User>("/users/me");
+        // Se a API retornar dados, o usuário está autenticado
+        setUser(response.data);
+      } catch (error) {
+        // Se der erro (ex: 401), o usuário não tem sessão ativa
+        console.log(error);
+        setUser(null);
+      } finally {
+        // Finaliza o estado de carregamento
+        setIsLoading(false);
       }
-    }
+    };
 
-    // Seta os states só se todos os dados estiverem válidos
-    if (parsedUser && storedAccessToken && storedRefreshToken) {
-      setUser(parsedUser);
-      setAccessToken(storedAccessToken);
-      setRefreshToken(storedRefreshToken);
-    } else {
-      // Garante storage limpo se tiver lixo
-      localStorage.removeItem("user");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-    }
+    checkAuthStatus();
 
-    setIsHydrated(true);
+    // 2. Ouvinte para o evento de erro de autenticação disparado pelo interceptor da API
+    const handleAuthError = () => logout();
+    window.addEventListener("auth-error", handleAuthError);
+
+    // 3. Limpa o ouvinte quando o componente for desmontado
+    return () => {
+      window.removeEventListener("auth-error", handleAuthError);
+    };
+    // O array de dependências vazio `[]` garante que isso rode apenas uma vez.
+    // O `logout` precisaria ser envolvido em `useCallback` para ser adicionado aqui,
+    // mas para esta lógica, não é estritamente necessário.
   }, []);
 
-  // Função para login seguro
-  const login = ({
-    accessToken,
-    refreshToken,
-    user,
-  }: {
-    accessToken: string;
-    refreshToken: string;
-    user: User;
-  }) => {
-    setUser(user);
-    setAccessToken(accessToken);
-    setRefreshToken(refreshToken);
-    console.log("AuthProvider: login chamado", { user, accessToken });
+  const login = (userData: User) => {
+    setUser(userData);
+    router.push("/dashboard");
+  };
 
-    // Só salva se o usuário é válido
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
+  const logout = async () => {
+    // Se já estiver deslogado, não faz nada
+    if (!user) return;
+
+    try {
+      // Chama o endpoint de logout da API para que ela invalide os cookies
+      await api.post("/auth/logout");
+    } catch (error) {
+      console.error("Erro ao fazer logout na API:", error);
+    } finally {
+      // Limpa o estado no front-end e redireciona, independentemente da resposta da API
+      setUser(null);
+      router.push("/auth/login");
     }
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
   };
-
-  // Função para logout seguro
-  const logout = () => {
-    setUser(null);
-    setAccessToken(null);
-    setRefreshToken(null);
-
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    router.push("/auth/login");
-  };
-
-  // Evita hydration mismatch: só renderiza children depois da hidratação
-  if (!isHydrated) {
-    return null; // Ou um skeleton/loading se preferir
-  }
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        accessToken,
-        refreshToken,
+        isAuthenticated: !!user,
         login,
         logout,
-        isAuthenticated: !!accessToken,
-        isHydrated,
+        isLoading,
       }}
     >
       {children}
@@ -126,7 +98,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context)
-    throw new Error("useAuth deve ser usado dentro de AuthProvider");
+  if (context === undefined) {
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+  }
   return context;
 };
