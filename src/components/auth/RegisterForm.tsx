@@ -7,31 +7,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api, endpoints } from "@/lib/api";
+import { api } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useRouter } from "next/router";
 
-type LoginFormProps = React.HTMLAttributes<HTMLDivElement>;
+type RegisterFormProps = React.HTMLAttributes<HTMLDivElement>;
 
-export async function login(email: string, password: string) {
-  await api.post(endpoints.login, { login: email, password });
-}
-
-export function LoginForm({ className, ...props }: LoginFormProps) {
+export function RegisterForm({ className, ...props }: RegisterFormProps) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
+
     const formData = new FormData(e.currentTarget);
-    const email = String(formData.get("email"));
-    const password = String(formData.get("password"));
+    const name = formData.get("name") as string;
+    const username = formData.get("username") as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
     try {
-      await login(email, password);
-      router.replace("/dashboard");
-    } catch {
-      setError("Login inválido!");
-      console.log(error);
+      await api.post("/auth/register", { name, username, email, password });
+      router.replace("/auth/login");
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Erro ao registrar.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -42,16 +46,39 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
           <form className="p-6 md:p-8" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="flex flex-col items-center text-center">
-                <h1 className="text-2xl font-bold">Bem-vindo de volta!</h1>
+                <h1 className="text-2xl font-bold">Crie sua conta</h1>
                 <p className="text-muted-foreground text-balance">
-                  Acesse sua conta no Flori$
+                  Comece a usar o Flori$ agora mesmo!
                 </p>
+              </div>
+
+              <div className="grid gap-3">
+                <Label htmlFor="name">Nome</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="Seu nome completo"
+                  required
+                />
+              </div>
+
+              <div className="grid gap-3">
+                <Label htmlFor="username">Nome de usuário</Label>
+                <Input
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="Escolha um nome de usuário"
+                  required
+                />
               </div>
 
               <div className="grid gap-3">
                 <Label htmlFor="email">E-mail</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="seuemail@exemplo.com"
                   required
@@ -59,20 +86,22 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
               </div>
 
               <div className="grid gap-3">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Senha</Label>
-                  <Link
-                    href="/forgot-password"
-                    className="ml-auto text-sm underline-offset-2 hover:underline"
-                  >
-                    Esqueceu sua senha?
-                  </Link>
-                </div>
-                <Input id="password" type="password" required />
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Crie uma senha forte"
+                  required
+                />
               </div>
 
-              <Button type="submit" className="w-full">
-                Entrar
+              {error && (
+                <div className="text-red-500 text-sm text-center">{error}</div>
+              )}
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Registrando..." : "Registrar"}
               </Button>
 
               <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
@@ -113,12 +142,12 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
               </div>
 
               <div className="text-center text-sm">
-                Ainda não tem uma conta?{" "}
+                Já tem uma conta?{" "}
                 <Link
-                  href="/auth/register"
+                  href="/auth/login"
                   className="underline underline-offset-4"
                 >
-                  Cadastre-se
+                  Faça login
                 </Link>
               </div>
             </div>
@@ -126,8 +155,8 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
 
           <div className="relative hidden bg-muted md:block">
             <Image
-              src="/login-image.jpg"
-              alt="Login Wallpaper"
+              src="/register-image.jpg"
+              alt="Register Wallpaper"
               fill
               style={{ objectFit: "cover" }}
               priority

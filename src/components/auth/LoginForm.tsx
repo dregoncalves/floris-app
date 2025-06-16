@@ -7,28 +7,52 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { register } from "@/lib/auth";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
-type RegisterFormProps = React.HTMLAttributes<HTMLDivElement>;
+type LoginFormProps = React.HTMLAttributes<HTMLDivElement>;
 
-export function RegisterForm({ className, ...props }: RegisterFormProps) {
+export function LoginForm({ className, ...props }: LoginFormProps) {
+  const { login } = useAuth();
   const router = useRouter();
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
+
     const formData = new FormData(e.currentTarget);
-    const name = String(formData.get("name"));
-    const email = String(formData.get("email"));
-    const password = String(formData.get("password"));
+    // Pega o campo com name="email" (pode ser e-mail ou username)
+    const loginField = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
     try {
-      await register({ name, email, password });
-      router.replace("/dashboard");
-    } catch {
-      setError("Erro ao registrar.");
+      // 1. Login: recebe accessToken e refreshToken
+      const response = await api.post("/auth/login", {
+        login: loginField,
+        password,
+      });
+      const { accessToken, refreshToken } = response.data;
+
+      // 2. Busca o usuário autenticado
+      const meResponse = await api.get("/users/me", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const user = meResponse.data;
+
+      // 3. Salva no contexto Auth
+      login({ accessToken, refreshToken, user });
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Erro ao fazer login.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,44 +63,47 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
           <form className="p-6 md:p-8" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="flex flex-col items-center text-center">
-                <h1 className="text-2xl font-bold">Crie sua conta</h1>
+                <h1 className="text-2xl font-bold">Bem-vindo de volta!</h1>
                 <p className="text-muted-foreground text-balance">
-                  Comece a usar o Flori$ agora mesmo!
+                  Acesse sua conta no Flori$
                 </p>
               </div>
 
               <div className="grid gap-3">
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Seu nome completo"
-                  required
-                />
-              </div>
-
-              <div className="grid gap-3">
-                <Label htmlFor="email">E-mail</Label>
+                <Label htmlFor="email">E-mail ou usuário</Label>
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="seuemail@exemplo.com"
+                  name="email" // <- ESSENCIAL para funcionar com FormData
+                  type="text"
+                  placeholder="Digite seu e-mail ou usuário"
                   required
                 />
               </div>
 
               <div className="grid gap-3">
-                <Label htmlFor="password">Senha</Label>
+                <div className="flex items-center">
+                  <Label htmlFor="password">Senha</Label>
+                  <Link
+                    href="/forgot-password"
+                    className="ml-auto text-sm underline-offset-2 hover:underline"
+                  >
+                    Esqueceu sua senha?
+                  </Link>
+                </div>
                 <Input
                   id="password"
+                  name="password" // <- ESSENCIAL para funcionar com FormData
                   type="password"
-                  placeholder="Crie uma senha forte"
                   required
                 />
               </div>
 
-              <Button type="submit" className="w-full">
-                Registrar
+              {error && (
+                <div className="text-red-500 text-sm text-center">{error}</div>
+              )}
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Entrando..." : "Entrar"}
               </Button>
 
               <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
@@ -117,12 +144,12 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
               </div>
 
               <div className="text-center text-sm">
-                Já tem uma conta?{" "}
+                Ainda não tem uma conta?{" "}
                 <Link
-                  href="/auth/login"
+                  href="/auth/register"
                   className="underline underline-offset-4"
                 >
-                  Faça login
+                  Cadastre-se
                 </Link>
               </div>
             </div>
@@ -130,8 +157,8 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
 
           <div className="relative hidden bg-muted md:block">
             <Image
-              src="/register-image.jpg"
-              alt="Register Wallpaper"
+              src="/login-image.jpg"
+              alt="Login Wallpaper"
               fill
               style={{ objectFit: "cover" }}
               priority
