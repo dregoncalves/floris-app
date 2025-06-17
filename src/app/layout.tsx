@@ -1,9 +1,15 @@
+// src/app/layout.tsx
+
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import { PT_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
+
+// 1. Importe o QueryProvider e o Toaster
+import { QueryProvider } from "@/components/query-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -45,7 +51,13 @@ export default function RootLayout({
             system: "system",
           }}
         >
-          <AuthProvider>{children}</AuthProvider>
+          {/* 2. Envolva o AuthProvider com o QueryProvider */}
+          <QueryProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </QueryProvider>
+
+          {/* 3. Adicione o Toaster aqui para as notificações */}
+          <Toaster richColors />
         </ThemeProvider>
       </body>
     </html>

@@ -16,7 +16,6 @@ import {
   IconRepeat,
   IconShoppingCart,
   IconCalendarCheck,
-  IconBadgeDollarSign,
   IconLoader2,
   IconPackage,
 } from "@tabler/icons-react";
