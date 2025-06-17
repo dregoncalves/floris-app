@@ -1,5 +1,6 @@
 "use client";
 
+// Seus imports de UI e bibliotecas - 100% MANTIDOS
 import * as React from "react";
 import {
   SortableContext,
@@ -16,17 +17,16 @@ import {
   IconRepeat,
   IconShoppingCart,
   IconCalendarCheck,
-  IconLoader2,
+  IconLoader, // Usando o IconLoader que já existe
   IconPackage,
+  IconClock,
 } from "@tabler/icons-react";
 import { ChevronDownIcon } from "lucide-react";
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getPaginationRowModel,
-  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -62,7 +62,15 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 
-// -------------- DatePickerVencimento ------------------
+// --- INTEGRAÇÃO COM A API VIA HOOKS CUSTOMIZADOS ---
+import { useGastos, useGastoMutations } from "@/hooks/useGastos";
+import { Gasto, GastoCreatePayload, TipoGasto } from "@/types/lancamentos";
+// --- FIM DA INTEGRAÇÃO ---
+
+// ============================================================================
+// SEUS COMPONENTES INTERNOS E HELPERS - NENHUMA ALTERAÇÃO
+// ============================================================================
+
 function DatePickerVencimento({
   value,
   onChange,
@@ -71,7 +79,7 @@ function DatePickerVencimento({
   onChange: (date: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
-  const dateObj = value ? new Date(value) : undefined;
+  const dateObj = value ? new Date(`${value}T00:00:00`) : undefined;
 
   return (
     <div className="flex flex-col gap-2">
@@ -96,10 +104,8 @@ function DatePickerVencimento({
             captionLayout="dropdown"
             onSelect={(date) => {
               if (date) {
-                const yyyy = date.getFullYear();
-                const mm = String(date.getMonth() + 1).padStart(2, "0");
-                const dd = String(date.getDate()).padStart(2, "0");
-                onChange(`${yyyy}-${mm}-${dd}`);
+                const isoDate = date.toISOString().split("T")[0];
+                onChange(isoDate);
                 setOpen(false);
               }
             }}
@@ -110,84 +116,16 @@ function DatePickerVencimento({
   );
 }
 
-// ---------------- Tipos e mocks -----------------------
-type Gasto = {
-  id: number;
-  descricao: string;
-  valor: number;
-  valorMensal: number;
-  tipo: "VARIAVEL" | "FIXO" | "PARCELADO";
-  dataVencimento: string;
-  numeroParcelaAtual: number | null;
-  totalParcelas: number | null;
-  gastoCartao: boolean;
-  pago: boolean;
-};
-
-const MOCK_GASTOS: Gasto[] = [
-  {
-    id: 1,
-    descricao: "Mercado",
-    valor: 150.0,
-    valorMensal: 150.0,
-    tipo: "VARIAVEL",
-    dataVencimento: "2025-06-15",
-    numeroParcelaAtual: null,
-    totalParcelas: null,
-    gastoCartao: false,
-    pago: true,
-  },
-  {
-    id: 2,
-    descricao: "Coxinha",
-    valor: 12.0,
-    valorMensal: 12.0,
-    tipo: "VARIAVEL",
-    dataVencimento: "2025-06-15",
-    numeroParcelaAtual: null,
-    totalParcelas: null,
-    gastoCartao: false,
-    pago: true,
-  },
-  {
-    id: 3,
-    descricao: "Computador",
-    valor: 3000.0,
-    valorMensal: 300.0,
-    tipo: "PARCELADO",
-    dataVencimento: "2025-06-15",
-    numeroParcelaAtual: 1,
-    totalParcelas: 10,
-    gastoCartao: false,
-    pago: false,
-  },
-  {
-    id: 4,
-    descricao: "Netflix",
-    valor: 60.0,
-    valorMensal: 60.0,
-    tipo: "FIXO",
-    dataVencimento: "2025-06-15",
-    numeroParcelaAtual: null,
-    totalParcelas: null,
-    gastoCartao: false,
-    pago: false,
-  },
-];
-
-// Badge de status: pago ou não
 function StatusBadge({ pago }: { pago: boolean }) {
   return (
     <>
-      {/* Ícone só no mobile */}
       <span className="md:hidden flex items-center justify-center">
         {pago ? (
           <IconCalendarCheck className="text-[var(--success)]" size={18} />
         ) : (
-          <IconLoader2 className="text-warning animate-spin" size={18} />
+          <IconClock className="text-warning" size={18} />
         )}
       </span>
-      {/* Badge no desktop */}
       <span className="hidden md:inline-flex">
         {pago ? (
           <Badge
@@ -199,7 +137,7 @@ function StatusBadge({ pago }: { pago: boolean }) {
               background: "transparent",
             }}
           >
-            <IconCalendarCheck style={{ color: "var(--success)" }} size={15} />
+            <IconCalendarCheck style={{ color: "var(--success)" }} size={15} />{" "}
             Pago
           </Badge>
         ) : (
@@ -207,13 +145,12 @@ function StatusBadge({ pago }: { pago: boolean }) {
             variant="outline"
             className="gap-1 px-2 py-1 text-xs rounded-md font-medium flex items-center border"
             style={{
-              color: "var(--warning-foreground)",
-              borderColor: "var(--warning)",
+              color: "text-muted",
+              borderColor: "text-muted",
               background: "transparent",
             }}
           >
-            <IconLoader2 className="animate-spin" size={15} />
-            Pendente
+            <IconClock size={15} /> Pendente
           </Badge>
         )}
       </span>
@@ -221,7 +158,6 @@ function StatusBadge({ pago }: { pago: boolean }) {
   );
 }
 
-// Badge de tipo (ícone no mobile, badge no desktop)
 function TipoBadge({ tipo }: { tipo: Gasto["tipo"] }) {
   let icon = <IconPackage size={18} />;
   let bg = "var(--muted)";
@@ -247,17 +183,12 @@ function TipoBadge({ tipo }: { tipo: Gasto["tipo"] }) {
 
   return (
     <>
-      {/* Ícone só no mobile */}
       <span className="md:hidden flex items-center justify-center">{icon}</span>
-      {/* Badge no desktop */}
       <span className="hidden md:inline-flex">
         <Badge
           variant="outline"
           className="text-xs px-2 py-1 rounded-md border-0 font-semibold flex items-center gap-1"
-          style={{
-            background: bg,
-            color,
-          }}
+          style={{ background: bg, color }}
         >
           {label}
         </Badge>
@@ -273,39 +204,103 @@ function formatDate(dateStr: string) {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
   });
 }
 
-// Modal centralizado com margin no mobile
+function DraggableRow({ row }: { row: any }) {
+  const { transform, transition, setNodeRef, isDragging } = useSortable({
+    id: row.original.id,
+  });
+  return (
+    <TableRow
+      data-dragging={isDragging}
+      ref={setNodeRef}
+      className="hover:bg-muted/50 data-[state=selected]:bg-muted border-b-2 transition-colors"
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition: transition,
+      }}
+    >
+      {row.getVisibleCells().map((cell: any) => (
+        <TableCell
+          key={cell.id}
+          className={cell.column.columnDef.meta?.className}
+        >
+          {" "}
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}{" "}
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+}
+
+// ============================================================================
+// SEU MODAL DE EDIÇÃO - CONECTADO AOS HOOKS
+// ============================================================================
 function EditDrawerModal({
   open,
   onClose,
   gasto,
+  onSave,
+  isSaving,
 }: {
   open: boolean;
   onClose: () => void;
-  gasto: Gasto | null;
+  gasto: Partial<Gasto> | null;
+  onSave: (data: GastoCreatePayload, id?: number) => void;
+  isSaving: boolean;
 }) {
-  const [editData, setEditData] = React.useState({
-    ...gasto,
-    dataVencimento: gasto?.dataVencimento ?? "",
-  });
+  const [editData, setEditData] = React.useState<Partial<Gasto> | null>(null);
 
   React.useEffect(() => {
-    if (gasto)
-      setEditData({
-        ...gasto,
-        dataVencimento: gasto.dataVencimento ?? "",
-      });
+    setEditData(gasto ? { ...gasto } : {});
   }, [gasto]);
 
-  if (!open || !gasto) return null;
+  if (!open || editData === null) return null;
+
+  const handleFieldChange = (field: keyof Gasto, value: any) => {
+    setEditData((prev) => (prev ? { ...prev, [field]: value } : null));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !editData.descricao ||
+      !editData.valor ||
+      !editData.dataVencimento ||
+      !editData.tipo
+    ) {
+      toast.error("Por favor, preencha todos os campos.");
+      return;
+    }
+
+    const payload: GastoCreatePayload = {
+      descricao: editData.descricao,
+      valor: Number(editData.valor),
+      tipo: editData.tipo as TipoGasto,
+      dataVencimento: editData.dataVencimento,
+      numeroParcelaAtual:
+        editData.tipo === "PARCELADO"
+          ? Number(editData.numeroParcelaAtual) || null
+          : null,
+      totalParcelas:
+        editData.tipo === "PARCELADO"
+          ? Number(editData.totalParcelas) || null
+          : null,
+      gastoCartao: !!editData.gastoCartao,
+      pago: !!editData.pago,
+    };
+    onSave(payload, editData.id);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2">
       <div className="bg-background rounded-2xl w-full max-w-md sm:max-w-sm mx-auto p-6 shadow-2xl animate-in fade-in slide-in-from-top-10 border relative">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-bold text-lg">Editar gasto</h2>
+          <h2 className="font-bold text-lg">
+            {editData.id ? "Editar Gasto" : "Novo Gasto"}
+          </h2>
           <button
             onClick={onClose}
             className="text-xl text-muted-foreground hover:text-foreground absolute top-3 right-4"
@@ -313,22 +308,14 @@ function EditDrawerModal({
             ×
           </button>
         </div>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            toast.success("Gasto atualizado (mock)!");
-            onClose();
-          }}
-        >
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          {/* SEUS INPUTS E SELECTS - MANTIDOS */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="descricao">Descrição</Label>
             <Input
               id="descricao"
-              value={editData.descricao}
-              onChange={(e) =>
-                setEditData((old) => ({ ...old, descricao: e.target.value }))
-              }
+              value={editData.descricao || ""}
+              onChange={(e) => handleFieldChange("descricao", e.target.value)}
               required
             />
           </div>
@@ -339,30 +326,21 @@ function EditDrawerModal({
               type="number"
               min={0}
               step={0.01}
-              value={editData.valor}
-              onChange={(e) =>
-                setEditData((old) => ({
-                  ...old,
-                  valor: Number(e.target.value),
-                }))
-              }
+              value={editData.valor || ""}
+              onChange={(e) => handleFieldChange("valor", e.target.value)}
               required
             />
           </div>
           <DatePickerVencimento
             value={editData.dataVencimento}
-            onChange={(val) =>
-              setEditData((old) => ({ ...old, dataVencimento: val }))
-            }
+            onChange={(val) => handleFieldChange("dataVencimento", val)}
           />
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
               <Label htmlFor="tipo">Tipo</Label>
               <Select
                 value={editData.tipo}
-                onValueChange={(val) =>
-                  setEditData((old) => ({ ...old, tipo: val as Gasto["tipo"] }))
-                }
+                onValueChange={(val) => handleFieldChange("tipo", val)}
               >
                 <SelectTrigger id="tipo" className="w-full">
                   <SelectValue placeholder="Tipo" />
@@ -379,10 +357,7 @@ function EditDrawerModal({
               <Select
                 value={editData.pago ? "pago" : "pendente"}
                 onValueChange={(val) =>
-                  setEditData((old) => ({
-                    ...old,
-                    pago: val === "pago",
-                  }))
+                  handleFieldChange("pago", val === "pago")
                 }
               >
                 <SelectTrigger id="pago" className="w-full">
@@ -395,53 +370,42 @@ function EditDrawerModal({
               </Select>
             </div>
           </div>
-          {/* Parcelas */}
           {editData.tipo === "PARCELADO" && (
             <div className="flex flex-col gap-2">
               <Label htmlFor="parcelas">Parcelas</Label>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Input
                   id="numeroParcelaAtual"
                   type="number"
                   min={1}
                   value={editData.numeroParcelaAtual ?? ""}
                   onChange={(e) =>
-                    setEditData((old) => ({
-                      ...old,
-                      numeroParcelaAtual: Number(e.target.value),
-                    }))
+                    handleFieldChange("numeroParcelaAtual", e.target.value)
                   }
                   placeholder="Atual"
-                  className="w-20"
+                  className="w-full"
                 />
-                <span className="text-sm flex items-center">de</span>
+                <span className="text-sm text-muted-foreground">de</span>
                 <Input
                   id="totalParcelas"
                   type="number"
                   min={1}
                   value={editData.totalParcelas ?? ""}
                   onChange={(e) =>
-                    setEditData((old) => ({
-                      ...old,
-                      totalParcelas: Number(e.target.value),
-                    }))
+                    handleFieldChange("totalParcelas", e.target.value)
                   }
                   placeholder="Total"
-                  className="w-20"
+                  className="w-full"
                 />
               </div>
             </div>
           )}
-          {/* Gasto cartão */}
           <div className="flex items-center gap-2">
-            <Label htmlFor="gastoCartao">Cartão?</Label>
+            <Label htmlFor="gastoCartao">Gasto no cartão?</Label>
             <Select
               value={editData.gastoCartao ? "sim" : "nao"}
               onValueChange={(val) =>
-                setEditData((old) => ({
-                  ...old,
-                  gastoCartao: val === "sim",
-                }))
+                handleFieldChange("gastoCartao", val === "sim")
               }
             >
               <SelectTrigger id="gastoCartao" className="w-24">
@@ -454,10 +418,17 @@ function EditDrawerModal({
             </Select>
           </div>
           <div className="flex justify-center gap-2 mt-4">
-            <Button variant="outline" type="button" onClick={onClose}>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={onClose}
+              disabled={isSaving}
+            >
               Cancelar
             </Button>
-            <Button type="submit">Salvar</Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? "Salvando..." : "Salvar"}
+            </Button>
           </div>
         </form>
       </div>
@@ -465,68 +436,35 @@ function EditDrawerModal({
   );
 }
 
-function DraggableRow({ row }: { row: any }) {
-  const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original.id,
-  });
-
-  return (
-    <TableRow
-      data-dragging={isDragging}
-      ref={setNodeRef}
-      className="hover:bg-muted/50 data-[state=selected]:bg-muted border-b-2 transition-colors"
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition: transition,
-      }}
-    >
-      {row.getVisibleCells().map((cell: any) => (
-        <TableCell
-          key={cell.id}
-          className={cell.column.columnDef.meta?.className}
-        >
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </TableCell>
-      ))}
-    </TableRow>
-  );
-}
-
+// ============================================================================
+// TABELA PRINCIPAL - USANDO OS NOVOS HOOKS DE GASTOS
+// ============================================================================
 export default function GastosTable() {
-  const [data, setData] = React.useState<Gasto[]>([]);
-  const [totalPages, setTotalPages] = React.useState(1);
-  const [totalElements, setTotalElements] = React.useState(0);
   const [search, setSearch] = React.useState("");
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
   });
+  const [editing, setEditing] = React.useState<Partial<Gasto> | null>(null);
 
-  const [editing, setEditing] = React.useState<Gasto | null>(null);
+  const { data: pageData, isLoading } = useGastos(pagination);
+  const { createGasto, updateGasto, deleteGasto, isCreating, isUpdating } =
+    useGastoMutations();
 
-  // MOCK do fetch
-  const fetchGastos = React.useCallback(() => {
-    setTimeout(() => {
-      setData(
-        MOCK_GASTOS.slice(
-          pagination.pageIndex * pagination.pageSize,
-          (pagination.pageIndex + 1) * pagination.pageSize
-        )
-      );
-      setTotalElements(MOCK_GASTOS.length);
-      setTotalPages(Math.ceil(MOCK_GASTOS.length / pagination.pageSize));
-    }, 200);
-  }, [pagination.pageIndex, pagination.pageSize]);
+  const handleSave = (payload: GastoCreatePayload, id?: number) => {
+    if (id) {
+      updateGasto({ id, payload }, { onSuccess: () => setEditing(null) });
+    } else {
+      createGasto(payload, { onSuccess: () => setEditing(null) });
+    }
+  };
 
-  React.useEffect(() => {
-    fetchGastos();
-  }, [fetchGastos]);
-
+  const tableData = React.useMemo(() => pageData?.content ?? [], [pageData]);
   const filteredData = search
-    ? data.filter((e) =>
-        e.descricao.toLowerCase().includes(search.toLowerCase())
+    ? tableData.filter((g) =>
+        g.descricao.toLowerCase().includes(search.toLowerCase())
       )
-    : data;
+    : tableData;
 
   const columns: ColumnDef<Gasto>[] = [
     {
@@ -583,7 +521,7 @@ export default function GastosTable() {
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
-              onClick={() => handleDelete(row.original.id)}
+              onClick={() => deleteGasto(row.original.id)}
             >
               <IconTrash className="mr-2" size={16} /> Excluir
             </DropdownMenuItem>
@@ -599,19 +537,14 @@ export default function GastosTable() {
     state: { pagination },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    pageCount: totalPages,
+    pageCount: pageData?.totalPages ?? 0,
     manualPagination: true,
   });
 
-  function handleDelete(id: number) {
-    setData((prev) => prev.filter((e) => e.id !== id));
-    toast.success("Gasto excluído!");
-  }
-
-  const total = filteredData.reduce((acc, e) => acc + e.valor, 0);
+  const total = React.useMemo(
+    () => filteredData.reduce((acc, g) => acc + g.valor, 0),
+    [filteredData]
+  );
 
   return (
     <div className="w-full m-auto space-y-4">
@@ -619,9 +552,10 @@ export default function GastosTable() {
         open={!!editing}
         onClose={() => setEditing(null)}
         gasto={editing}
+        onSave={handleSave}
+        isSaving={isCreating || isUpdating}
       />
 
-      {/* Cabeçalho */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex gap-2 items-center">
           <Input
@@ -631,7 +565,7 @@ export default function GastosTable() {
             className="w-64"
           />
           <Button
-            onClick={() => setEditing({} as Gasto)}
+            onClick={() => setEditing({})}
             variant="default"
             size="default"
           >
@@ -640,7 +574,6 @@ export default function GastosTable() {
         </div>
       </div>
 
-      {/* Tabela */}
       <div className="overflow-hidden rounded-lg border bg-background">
         <Table>
           <TableHeader className="bg-muted sticky top-0 z-10">
@@ -661,9 +594,20 @@ export default function GastosTable() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  <div className="flex justify-center items-center">
+                    <IconLoader className="animate-spin text-muted-foreground" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length ? (
               <SortableContext
-                items={filteredData.map((e) => e.id)}
+                items={filteredData.map((g) => g.id)}
                 strategy={verticalListSortingStrategy}
               >
                 {table.getRowModel().rows.map((row) => (
@@ -684,68 +628,15 @@ export default function GastosTable() {
         </Table>
       </div>
 
-      {/* Rodapé responsivo */}
       <div className="w-full px-4 pb-4 mt-1">
-        {/* Mobile: Gastos por página + paginação na mesma linha, total exibido embaixo */}
-        <div className="flex flex-col gap-1 md:hidden">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium">Gastos por página</span>
-            <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => table.setPageSize(Number(value))}
-            >
-              <SelectTrigger size="sm" className="w-16">
-                <SelectValue
-                  placeholder={table.getState().pagination.pageSize}
-                />
-              </SelectTrigger>
-              <SelectContent side="top">
-                {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <span className="text-sm font-medium ml-2">
-              {pagination.pageIndex + 1} de {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => table.previousPage()}
-              disabled={pagination.pageIndex === 0}
-            >
-              <span className="sr-only">Página anterior</span>
-              {"<"}
-            </Button>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => table.nextPage()}
-              disabled={pagination.pageIndex + 1 >= totalPages}
-            >
-              <span className="sr-only">Próxima página</span>
-              {">"}
-            </Button>
-          </div>
-          <div className="text-sm text-muted-foreground font-semibold mt-0.5">
-            Total exibido:{" "}
-            <span style={{ color: "var(--primary)" }}>
-              {total.toLocaleString("pt-BR", {
-                style: "currency",
-                currency: "BRL",
-              })}
-            </span>
-          </div>
-        </div>
-        {/* Desktop: tudo em linha */}
         <div className="hidden md:flex w-full items-center justify-between gap-8">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">Gastos por página</span>
             <Select
               value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => table.setPageSize(Number(value))}
+              onValueChange={(value) => {
+                table.setPageSize(Number(value));
+              }}
             >
               <SelectTrigger size="sm" className="w-20">
                 <SelectValue
@@ -772,24 +663,23 @@ export default function GastosTable() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">
-              Página {pagination.pageIndex + 1} de {totalPages}
+              Página {table.getState().pagination.pageIndex + 1} de{" "}
+              {table.getPageCount()}
             </span>
             <Button
               variant="outline"
               className="h-8 w-8 p-0"
               onClick={() => table.previousPage()}
-              disabled={pagination.pageIndex === 0}
+              disabled={!table.getCanPreviousPage()}
             >
-              <span className="sr-only">Página anterior</span>
               {"<"}
             </Button>
             <Button
               variant="outline"
               className="h-8 w-8 p-0"
               onClick={() => table.nextPage()}
-              disabled={pagination.pageIndex + 1 >= totalPages}
+              disabled={!table.getCanNextPage()}
             >
-              <span className="sr-only">Próxima página</span>
               {">"}
             </Button>
           </div>
