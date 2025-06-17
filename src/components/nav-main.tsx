@@ -87,7 +87,7 @@ export function NavMain({
                   </CollapsibleTrigger>
 
                   <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
-                    <SidebarMenu className="pl-4 pr-2 w-full">
+                    <SidebarMenu className="pl-4 pr-2 pt-3 w-full">
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           asChild
@@ -101,7 +101,7 @@ export function NavMain({
                           asChild
                           className="w-full text-sm truncate"
                         >
-                          <Link href="/lancamentos/gastos">Saídas</Link>
+                          <Link href="/lancamentos/gastos">Gastos</Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     </SidebarMenu>
