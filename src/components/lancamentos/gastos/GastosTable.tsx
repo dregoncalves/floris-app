@@ -295,7 +295,7 @@ function EditDrawerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 mb-0">
       <div className="bg-background rounded-2xl w-full max-w-md sm:max-w-sm mx-auto p-6 shadow-2xl animate-in fade-in slide-in-from-top-10 border relative">
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold text-lg">

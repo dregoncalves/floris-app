@@ -32,24 +32,23 @@ export function DashboardCardGastosFixosRadial({
 }: DashboardCardGastosFixosRadialProps) {
   // Lógica de cor e texto
   let fillColor = "var(--success)";
-  let footerTextColorClass = "text-success-foreground";
+  let footerTextColorClass = "text-success";
   let icon = <PiggyBank className="size-6 text-success" />;
   let status = "Ótimo";
   let statusMessage = "Seus gastos fixos estão em um nível saudável!";
 
   if (percentual > 65) {
     fillColor = "var(--danger)";
-    footerTextColorClass = "text-danger-foreground";
+    footerTextColorClass = "text-danger";
     icon = <AlertTriangle className="size-6 text-danger" />;
     status = "Crítico";
-    statusMessage =
-      "Atenção: Seus gastos fixos estão muito altos. Considere revisar!";
+    statusMessage = "Seus gastos fixos estão muito altos. Considere revisar!";
   } else if (percentual > 50) {
     fillColor = "var(--warning)";
     footerTextColorClass = "text-warning";
     icon = <AlertTriangle className="size-6 text-warning" />;
     status = "Atenção";
-    statusMessage = "Fique de olho: Seus gastos fixos exigem atenção.";
+    statusMessage = "Seus gastos fixos exigem atenção.";
   }
 
   // Prepara os dados do gráfico
@@ -64,13 +63,12 @@ export function DashboardCardGastosFixosRadial({
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
         <div className="flex justify-between">
-          <CardTitle>Gastos fixos % da renda</CardTitle>
+          <CardTitle>Gastos fixos</CardTitle>
           <Badge variant="outline" className="gap-1">
             {icon}
             {status}
           </Badge>
         </div>
-        <CardDescription>Quanto da sua renda está comprometida</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer

@@ -16,7 +16,13 @@ export function middleware(request: NextRequest) {
     console.log("[MIDDLEWARE] Cookie de autenticação NÃO ENCONTRADO.");
   }
 
-  const privateRoutes = ["/dashboard"];
+  const privateRoutes = [
+    "/dashboard",
+    "/lancamentos/entradas",
+    "/lancamentos/gastos",
+    "/metas",
+    "/reserva-emergencia",
+  ];
   const publicOnlyRoutes = ["/auth/login", "/auth/register"];
 
   const isAccessingPrivateRoute = privateRoutes.some((route) =>
