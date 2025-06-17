@@ -1,13 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  IconChartBar,
-  IconDashboard,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconSettings,
-} from "@tabler/icons-react";
+import { IconChartBar, IconSettings } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -22,6 +16,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { ArrowLeftRight, LayoutDashboard, PiggyBank } from "lucide-react";
+import Image from "next/image";
 
 const data = {
   user: {
@@ -49,7 +44,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="#">
-                <IconInnerShadowTop className="!size-5" />
+                <Image
+                  src={"/plant-pot-teste.png"}
+                  width={20}
+                  height={20}
+                  alt="Floris Icon"
+                ></Image>
                 <span className="text-base font-semibold">Flori$ Inc.</span>
               </a>
             </SidebarMenuButton>
