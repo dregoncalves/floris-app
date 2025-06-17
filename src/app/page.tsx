@@ -4,17 +4,17 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const { isAuthenticated, isHydrated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isLoading) return;
     if (isAuthenticated) {
       router.replace("/dashboard");
     } else {
       router.replace("/auth/login");
     }
-  }, [isAuthenticated, isHydrated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
   return null;
 }

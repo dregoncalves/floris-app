@@ -19,14 +19,14 @@ export function BirthdayCalendar() {
   return (
     <div className="flex flex-col gap-3">
       <Label htmlFor="date" className="px-1">
-        Date of birth
+        Data de nascimento
       </Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             id="date"
-            className="w-48 justify-between font-normal"
+            className="w-full justify-between font-normal"
           >
             {date ? date.toLocaleDateString() : "Select date"}
             <ChevronDownIcon />
