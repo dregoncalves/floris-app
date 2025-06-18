@@ -1,6 +1,5 @@
 "use client";
 
-// Seus imports de UI e bibliotecas - 100% MANTIDOS
 import * as React from "react";
 import {
   SortableContext,
@@ -17,7 +16,7 @@ import {
   IconRepeat,
   IconShoppingCart,
   IconCalendarCheck,
-  IconLoader, // Usando o IconLoader que já existe
+  IconLoader,
   IconPackage,
   IconClock,
 } from "@tabler/icons-react";
@@ -26,7 +25,6 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -62,15 +60,10 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 
-// --- INTEGRAÇÃO COM A API VIA HOOKS CUSTOMIZADOS ---
 import { useGastos, useGastoMutations } from "@/hooks/useGastos";
 import { Gasto, GastoCreatePayload, TipoGasto } from "@/types/lancamentos";
-// --- FIM DA INTEGRAÇÃO ---
 
-// ============================================================================
-// SEUS COMPONENTES INTERNOS E HELPERS - NENHUMA ALTERAÇÃO
-// ============================================================================
-
+// Componente pra pegar a data de vencimento
 function DatePickerVencimento({
   value,
   onChange,
@@ -116,6 +109,7 @@ function DatePickerVencimento({
   );
 }
 
+// Badge de status do gasto
 function StatusBadge({ pago }: { pago: boolean }) {
   return (
     <>
@@ -158,6 +152,7 @@ function StatusBadge({ pago }: { pago: boolean }) {
   );
 }
 
+// Badge do tipo de gasto
 function TipoBadge({ tipo }: { tipo: Gasto["tipo"] }) {
   let icon = <IconPackage size={18} />;
   let bg = "var(--muted)";
@@ -235,9 +230,7 @@ function DraggableRow({ row }: { row: any }) {
   );
 }
 
-// ============================================================================
-// SEU MODAL DE EDIÇÃO - CONECTADO AOS HOOKS
-// ============================================================================
+// Modal pra editar ou criar um gasto
 function EditDrawerModal({
   open,
   onClose,
@@ -253,16 +246,19 @@ function EditDrawerModal({
 }) {
   const [editData, setEditData] = React.useState<Partial<Gasto> | null>(null);
 
+  // Popula o formulário quando um gasto é passado pra edição
   React.useEffect(() => {
     setEditData(gasto ? { ...gasto } : {});
   }, [gasto]);
 
   if (!open || editData === null) return null;
 
+  // Atualiza um campo no estado do formulário
   const handleFieldChange = (field: keyof Gasto, value: any) => {
     setEditData((prev) => (prev ? { ...prev, [field]: value } : null));
   };
 
+  // Lida com o envio do formulário
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (
@@ -275,6 +271,7 @@ function EditDrawerModal({
       return;
     }
 
+    // Monta o payload conforme a API espera
     const payload: GastoCreatePayload = {
       descricao: editData.descricao,
       valor: Number(editData.valor),
@@ -400,23 +397,6 @@ function EditDrawerModal({
               </div>
             </div>
           )}
-          <div className="flex items-center gap-2">
-            <Label htmlFor="gastoCartao">Gasto no cartão?</Label>
-            <Select
-              value={editData.gastoCartao ? "sim" : "nao"}
-              onValueChange={(val) =>
-                handleFieldChange("gastoCartao", val === "sim")
-              }
-            >
-              <SelectTrigger id="gastoCartao" className="w-24">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sim">Sim</SelectItem>
-                <SelectItem value="nao">Não</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <div className="flex justify-center gap-2 mt-4">
             <Button
               variant="outline"
@@ -436,9 +416,6 @@ function EditDrawerModal({
   );
 }
 
-// ============================================================================
-// TABELA PRINCIPAL - USANDO OS NOVOS HOOKS DE GASTOS
-// ============================================================================
 export default function GastosTable() {
   const [search, setSearch] = React.useState("");
   const [pagination, setPagination] = React.useState({
@@ -447,10 +424,12 @@ export default function GastosTable() {
   });
   const [editing, setEditing] = React.useState<Partial<Gasto> | null>(null);
 
+  // Busca os gastos e pega as funções de mutação
   const { data: pageData, isLoading } = useGastos(pagination);
   const { createGasto, updateGasto, deleteGasto, isCreating, isUpdating } =
     useGastoMutations();
 
+  // Função pra salvar um gasto (cria ou atualiza)
   const handleSave = (payload: GastoCreatePayload, id?: number) => {
     if (id) {
       updateGasto({ id, payload }, { onSuccess: () => setEditing(null) });
@@ -466,6 +445,7 @@ export default function GastosTable() {
       )
     : tableData;
 
+  // Definição das colunas da tabela
   const columns: ColumnDef<Gasto>[] = [
     {
       id: "status",
@@ -531,6 +511,7 @@ export default function GastosTable() {
     },
   ];
 
+  // Configuração da tabela usando useReactTable
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -541,6 +522,7 @@ export default function GastosTable() {
     manualPagination: true,
   });
 
+  // Calcula o total dos gastos exibidos
   const total = React.useMemo(
     () => filteredData.reduce((acc, g) => acc + g.valor, 0),
     [filteredData]

@@ -1,5 +1,3 @@
-// src/hooks/useGastos.ts
-
 import {
   useQuery,
   useMutation,
@@ -16,7 +14,7 @@ import {
 } from "@/services/GastosService";
 import { GastoCreatePayload } from "@/types/lancamentos";
 
-// Hook para buscar a lista de gastos com paginação
+// Hook pra buscar a lista de gastos com paginação
 export function useGastos(pagination: { pageIndex: number; pageSize: number }) {
   return useQuery({
     queryKey: ["gastos", pagination.pageIndex, pagination.pageSize],
@@ -26,10 +24,11 @@ export function useGastos(pagination: { pageIndex: number; pageSize: number }) {
   });
 }
 
-// Hook que agrupa todas as mutações de gastos
+// Hook que agrupa as mutações de gastos (criar, atualizar, deletar)
 export function useGastoMutations() {
   const queryClient = useQueryClient();
 
+  // Mutação pra criar gasto
   const createMutation = useMutation({
     mutationFn: createGasto,
     onSuccess: () => {
@@ -39,6 +38,7 @@ export function useGastoMutations() {
     onError: (err: Error) => toast.error(`Erro ao criar gasto: ${err.message}`),
   });
 
+  // Mutação pra atualizar gasto
   const updateMutation = useMutation({
     mutationFn: ({
       id,
@@ -55,6 +55,7 @@ export function useGastoMutations() {
       toast.error(`Erro ao atualizar gasto: ${err.message}`),
   });
 
+  // Mutação pra deletar gasto
   const deleteMutation = useMutation({
     mutationFn: deleteGasto,
     onSuccess: () => {

@@ -1,23 +1,19 @@
-// src/lib/api.ts
 import axios from "axios";
 
+// URL base da API
 const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export const api = axios.create({
   baseURL,
-  withCredentials: true, // ESSENCIAL para o navegador enviar cookies httpOnly
+  withCredentials: true, // Pra enviar cookies
 });
 
-// O interceptor de resposta agora serve apenas para capturar um erro de
-// autenticação e notificar a aplicação para deslogar o usuário.
+// Interceptor pra tratar erro de autenticação (401)
 api.interceptors.response.use(
-  (response) => response, // Se a resposta for sucesso, não faz nada.
+  (response) => response,
   (error) => {
-    // Se a API retornar 401, significa que a sessão é inválida ou expirou.
     if (error.response?.status === 401) {
-      // Disparamos um evento global. O AuthContext irá "ouvir" esse evento e
-      // executará a função de logout. Isso evita importações circulares.
-      window.dispatchEvent(new Event("auth-error"));
+      window.dispatchEvent(new Event("auth-error")); // Dispara evento global
     }
     return Promise.reject(error);
   }

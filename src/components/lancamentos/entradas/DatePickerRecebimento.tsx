@@ -18,7 +18,6 @@ export function DatePickerRecebimento({
 }) {
   const [open, setOpen] = React.useState(false);
 
-  // Parse value string to Date object
   const dateObj = value ? new Date(value) : undefined;
 
   return (
@@ -44,7 +43,6 @@ export function DatePickerRecebimento({
             captionLayout="dropdown"
             onSelect={(date) => {
               if (date) {
-                // Converte para "YYYY-MM-DD"
                 const yyyy = date.getFullYear();
                 const mm = String(date.getMonth() + 1).padStart(2, "0");
                 const dd = String(date.getDate()).padStart(2, "0");

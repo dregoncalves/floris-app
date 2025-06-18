@@ -53,6 +53,7 @@ interface Props {
   isLoading: boolean;
 }
 
+// Configuração do gráfico
 const chartConfig = {
   percentual: { label: "Percentual" },
   reserva: { label: "Reserva", color: "hsl(var(--foreground))" },
@@ -62,10 +63,12 @@ export function DashboardCardReservaEmergencia({
   reservaData,
   isLoading,
 }: Props) {
+  // Estados para controlar a abertura dos modais
   const [isCreateEditModalOpen, setCreateEditModalOpen] = useState(false);
   const [isAporteModalOpen, setAporteModalOpen] = useState(false);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
 
+  // Hooks para mutações da reserva de emergência
   const {
     createReserva,
     updateReserva,
@@ -75,22 +78,23 @@ export function DashboardCardReservaEmergencia({
     isDeleting,
   } = useReservaEmergenciaMutations();
 
+  // Handler para salvar ou editar a meta da reserva
   const handleSaveMeta = (data: { valorObjetivo: number }) => {
     if (reservaData?.id) {
-      // Editando a meta de uma reserva existente
+      // Se já existe, atualiza a meta
       const payload: ReservaUpdatePayload = {
         valorObjetivo: data.valorObjetivo,
-        valorAtual: reservaData.valorAtual, // Mantém o valor atual que já existe
+        valorAtual: reservaData.valorAtual, // Mantém o valor atual
         ativa: reservaData.ativa,
       };
       updateReserva(payload, {
         onSuccess: () => setCreateEditModalOpen(false),
       });
     } else {
-      // Criando uma nova reserva
+      // Se não existe, cria uma nova reserva
       const payload: ReservaCreatePayload = {
         valorObjetivo: data.valorObjetivo,
-        valorAtual: 0, // Ao criar, valor atual é 0
+        valorAtual: 0, // Inicia com valor 0
       };
       createReserva(payload, {
         onSuccess: () => setCreateEditModalOpen(false),
@@ -98,25 +102,28 @@ export function DashboardCardReservaEmergencia({
     }
   };
 
+  // Handler para realizar um aporte na reserva
   const handleAporte = (data: { valor: number }) => {
-    if (!reservaData) return; // Segurança: não deveria ser possível aportar sem reserva
+    if (!reservaData) return; // Garante que a reserva existe
 
     const novoValorAtual = reservaData.valorAtual + data.valor;
 
     const payload: ReservaUpdatePayload = {
-      valorObjetivo: reservaData.valorObjetivo, // Mantém a meta existente
-      valorAtual: novoValorAtual, // Envia o novo valor somado
+      valorObjetivo: reservaData.valorObjetivo, // Mantém a meta
+      valorAtual: novoValorAtual, // Atualiza com o novo valor
       ativa: reservaData.ativa,
     };
     updateReserva(payload, { onSuccess: () => setAporteModalOpen(false) });
   };
 
+  // Handler para deletar a reserva
   const handleDelete = () => {
     deleteReserva(undefined, {
       onSuccess: () => setDeleteModalOpen(false),
     });
   };
 
+  // Exibe skeleton enquanto carrega
   if (isLoading) {
     return (
       <Card className="flex-1 min-w-[300px] flex flex-col justify-between">
@@ -133,6 +140,7 @@ export function DashboardCardReservaEmergencia({
     );
   }
 
+  // Exibe card para criar reserva se não houver dados
   if (!reservaData) {
     return (
       <>
@@ -157,7 +165,9 @@ export function DashboardCardReservaEmergencia({
     );
   }
 
+  // Desestruturação dos dados da reserva
   const { percentualConcluido, valorAtual, valorObjetivo } = reservaData;
+  // Dados para o gráfico radial
   const chartData = [
     {
       nome: "reserva",
@@ -165,6 +175,7 @@ export function DashboardCardReservaEmergencia({
       fill: "var(--danger)",
     },
   ];
+  // Calcula o ângulo final do gráfico
   const endAngle =
     0 + ((percentualConcluido > 100 ? 100 : percentualConcluido) / 100) * 360;
 

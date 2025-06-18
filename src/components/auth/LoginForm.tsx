@@ -45,7 +45,6 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
     }
   };
 
-  // O restante do seu JSX continua o mesmo...
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">

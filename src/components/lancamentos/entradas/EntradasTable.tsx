@@ -1,6 +1,5 @@
 "use client";
 
-// Seus imports de UI e bibliotecas - 100% MANTIDOS
 import * as React from "react";
 import {
   SortableContext,
@@ -19,14 +18,13 @@ import {
   IconBriefcase,
   IconBulb,
   IconQuestionMark,
-  IconLoader, // Adicionado para o estado de loading
+  IconLoader,
 } from "@tabler/icons-react";
 import { ChevronDownIcon } from "lucide-react";
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -62,18 +60,12 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 
-// --- INTEGRAÇÃO COM A API VIA HOOKS CUSTOMIZADOS ---
 import { useEntradas, useEntradaMutations } from "@/hooks/useEntradas";
 import {
   Entrada,
   EntradaCreatePayload,
   TipoEntrada,
 } from "@/types/lancamentos";
-// --- FIM DA INTEGRAÇÃO ---
-
-// ============================================================================
-// SEUS COMPONENTES INTERNOS E HELPERS - NENHUMA ALTERAÇÃO
-// ============================================================================
 
 function DatePickerRecebimento({
   value,
@@ -245,9 +237,6 @@ function DraggableRow({ row }: { row: any }) {
   );
 }
 
-// ============================================================================
-// SEU MODAL DE EDIÇÃO - CONECTADO AOS HOOKS
-// ============================================================================
 function EditDrawerModal({
   open,
   onClose,
@@ -389,9 +378,6 @@ function EditDrawerModal({
   );
 }
 
-// ============================================================================
-// TABELA PRINCIPAL - AGORA USANDO OS HOOKS
-// ============================================================================
 export default function EntradasTable() {
   const [search, setSearch] = React.useState("");
   const [pagination, setPagination] = React.useState({

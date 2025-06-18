@@ -16,68 +16,59 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (userData: User) => void;
   logout: () => Promise<void>;
-  isLoading: boolean; // Renomeado de isHydrated para maior clareza
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider = ({ children }: { ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Sempre começa checando
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Este useEffect é o coração da nova autenticação
+  // Efeito pra checar o status de autenticação e configurar o ouvinte de erro
   useEffect(() => {
-    // 1. Função que verifica se o usuário já está logado
+    // Checa se o usuário já tá logado via cookie
     const checkAuthStatus = async () => {
       try {
-        // O navegador envia os cookies automaticamente com esta chamada
         const response = await api.get<User>("/users/me");
-        // Se a API retornar dados, o usuário está autenticado
-        setUser(response.data);
+        setUser(response.data); // Usuário autenticado
       } catch (error) {
-        // Se der erro (ex: 401), o usuário não tem sessão ativa
-        console.log(error);
-        setUser(null);
+        setUser(null); // Sem sessão ativa
       } finally {
-        // Finaliza o estado de carregamento
-        setIsLoading(false);
+        setIsLoading(false); // Finaliza o carregamento
       }
     };
 
     checkAuthStatus();
 
-    // 2. Ouvinte para o evento de erro de autenticação disparado pelo interceptor da API
+    // Ouve o evento de erro de autenticação pra deslogar
     const handleAuthError = () => logout();
     window.addEventListener("auth-error", handleAuthError);
 
-    // 3. Limpa o ouvinte quando o componente for desmontado
+    // Limpa o ouvinte ao desmontar
     return () => {
       window.removeEventListener("auth-error", handleAuthError);
     };
-    // O array de dependências vazio `[]` garante que isso rode apenas uma vez.
-    // O `logout` precisaria ser envolvido em `useCallback` para ser adicionado aqui,
-    // mas para esta lógica, não é estritamente necessário.
-  }, []);
+  }, []); // Roda só uma vez
 
+  // Faz login e redireciona pro dashboard
   const login = (userData: User) => {
     setUser(userData);
     router.push("/dashboard");
   };
 
+  // Faz logout, invalida a sessão na API e limpa o estado local
   const logout = async () => {
-    // Se já estiver deslogado, não faz nada
-    if (!user) return;
+    if (!user) return; // Se já deslogado, não faz nada
 
     try {
-      // Chama o endpoint de logout da API para que ela invalide os cookies
-      await api.post("/auth/logout");
+      await api.post("/auth/logout"); // Invalida o cookie na API
     } catch (error) {
       console.error("Erro ao fazer logout na API:", error);
     } finally {
-      // Limpa o estado no front-end e redireciona, independentemente da resposta da API
-      setUser(null);
-      router.push("/auth/login");
+      setUser(null); // Limpa o estado
+      router.push("/auth/login"); // Redireciona
     }
   };
 
@@ -96,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// Hook pra usar o contexto de autenticação
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

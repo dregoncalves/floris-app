@@ -31,8 +31,10 @@ interface SpringPage<T> {
 // ENTRADAS
 // ===================================================================
 
+// Tipos possíveis de entrada
 export type TipoEntrada = "SALARIO" | "FREELA" | "RENDA_EXTRA" | "OUTROS";
 
+// Estrutura de uma entrada
 export interface Entrada {
   id: number;
   descricao: string;
@@ -42,17 +44,22 @@ export interface Entrada {
   recorrente: boolean;
 }
 
+// Payload para criar uma entrada (sem o ID)
 export type EntradaCreatePayload = Omit<Entrada, "id">;
+// Payload para atualizar uma entrada (sem o ID)
 export type EntradaUpdatePayload = Omit<Entrada, "id">;
 
+// Página de entradas, usando a interface SpringPage
 export type EntradasPage = SpringPage<Entrada>;
 
 // ===================================================================
 // GASTOS
 // ===================================================================
 
+// Tipos possíveis de gasto
 export type TipoGasto = "VARIAVEL" | "FIXO" | "PARCELADO";
 
+// Estrutura de um gasto
 export interface Gasto {
   id: number;
   descricao: string;
@@ -66,8 +73,10 @@ export interface Gasto {
   pago: boolean;
 }
 
-// Para criação, não enviamos id nem valorMensal (calculado no backend)
+// Payload para criar gasto (sem id e valorMensal)
 export type GastoCreatePayload = Omit<Gasto, "id" | "valorMensal">;
+// Payload para atualizar gasto (sem id e valorMensal)
 export type GastoUpdatePayload = Omit<Gasto, "id" | "valorMensal">;
 
+// Página de gastos, usando a interface SpringPage
 export type GastosPage = SpringPage<Gasto>;

@@ -51,12 +51,10 @@ export default function RootLayout({
             system: "system",
           }}
         >
-          {/* 2. Envolva o AuthProvider com o QueryProvider */}
           <QueryProvider>
             <AuthProvider>{children}</AuthProvider>
           </QueryProvider>
 
-          {/* 3. Adicione o Toaster aqui para as notificações */}
           <Toaster richColors />
         </ThemeProvider>
       </body>

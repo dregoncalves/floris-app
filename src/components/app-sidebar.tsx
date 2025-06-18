@@ -50,7 +50,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   height={20}
                   alt="Floris Icon"
                 ></Image>
-                <span className="text-base font-semibold">Flori$ Inc.</span>
+                <span className="text-base font-semibold">Floris</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

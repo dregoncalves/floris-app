@@ -31,7 +31,7 @@ export function NavMain({
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
 
-  // Melhor auto-expandir o submenu se já está em lançamentos:
+  // Abre o submenu "Lançamentos" se a URL começa com "/lancamentos"
   useEffect(() => {
     if (pathname.startsWith("/lancamentos")) {
       setOpen(true);
@@ -43,7 +43,7 @@ export function NavMain({
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
-        {/* Entrada Rápida fixa */}
+        {/* Botão de Entrada Rápida */}
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
@@ -56,15 +56,16 @@ export function NavMain({
           </SidebarMenuItem>
         </SidebarMenu>
 
-        {/* Divider */}
+        {/* Separador */}
         <div className="px-4 py-2">
           <Separator />
         </div>
 
-        {/* Menus principais */}
+        {/* Renderiza os itens do menu */}
         <SidebarMenu>
           {items.map((item) =>
             item.title === "Lançamentos" ? (
+              // Trata o item "Lançamentos" como um menu colapsável
               <SidebarMenuItem key={item.title}>
                 <Collapsible open={open} onOpenChange={setOpen}>
                   <CollapsibleTrigger asChild>
@@ -109,6 +110,7 @@ export function NavMain({
                 </Collapsible>
               </SidebarMenuItem>
             ) : (
+              // Renderiza outros itens do menu
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
                   asChild

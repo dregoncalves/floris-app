@@ -1,22 +1,20 @@
 import { api } from "@/lib/api";
 import { ReservaEmergencia } from "@/types/dashboard";
 
-// Payload para CRIAR a reserva
+// Estrutura pra criar a reserva
 export interface ReservaCreatePayload {
   valorObjetivo: number;
   valorAtual: number;
 }
 
-// ATUALIZADO: Payload para ATUALIZAR a reserva (sempre completo)
+// Estrutura pra atualizar a reserva, sempre completo
 export interface ReservaUpdatePayload {
   valorObjetivo: number;
   valorAtual: number;
   ativa: boolean;
 }
 
-// Aporte não é um tipo de payload, é uma ação que gera um ReservaUpdatePayload
-
-// POST /reserva-emergencia
+// POST: criar uma nova reserva de emergência
 export async function createReserva(
   payload: ReservaCreatePayload
 ): Promise<ReservaEmergencia> {
@@ -27,7 +25,7 @@ export async function createReserva(
   return response.data;
 }
 
-// PUT /reserva-emergencia
+// PUT: atualizar a reserva de emergência existente
 export async function updateReserva(
   payload: ReservaUpdatePayload
 ): Promise<ReservaEmergencia> {
@@ -38,7 +36,7 @@ export async function updateReserva(
   return response.data;
 }
 
-// DELETE /reserva-emergencia
+// DELETE: remover a reserva de emergência
 export async function deleteReserva(): Promise<void> {
   await api.delete("/reserva-emergencia");
 }

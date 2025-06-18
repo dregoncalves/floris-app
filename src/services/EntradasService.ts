@@ -6,13 +6,14 @@ import type {
   EntradasPage,
 } from "@/types/lancamentos";
 
+// Parâmetros pra listar entradas (paginação, tamanho, ordenação)
 interface GetEntradasParams {
   page?: number;
   size?: number;
   sort?: string;
 }
 
-// 1. Listar todas as entradas (com paginação)
+// 1. Listar todas as entradas, com paginação
 export async function getEntradas(
   params: GetEntradasParams
 ): Promise<EntradasPage> {
@@ -20,13 +21,13 @@ export async function getEntradas(
   return response.data;
 }
 
-// 2. Buscar entrada por ID
+// 2. Buscar uma entrada pelo ID
 export async function getEntradaById(id: number): Promise<Entrada> {
   const response = await api.get<Entrada>(`/entradas/${id}`);
   return response.data;
 }
 
-// 3. Criar nova entrada
+// 3. Criar uma nova entrada
 export async function createEntrada(
   payload: EntradaCreatePayload
 ): Promise<Entrada> {
@@ -34,7 +35,7 @@ export async function createEntrada(
   return response.data;
 }
 
-// 4. Atualizar uma entrada
+// 4. Atualizar uma entrada existente
 export async function updateEntrada(
   id: number,
   payload: EntradaUpdatePayload
@@ -43,7 +44,7 @@ export async function updateEntrada(
   return response.data;
 }
 
-// 5. Deletar uma entrada
+// 5. Deletar uma entrada pelo ID
 export async function deleteEntrada(id: number): Promise<void> {
   await api.delete(`/entradas/${id}`);
 }

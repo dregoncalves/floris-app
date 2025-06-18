@@ -1,6 +1,3 @@
-// src/hooks/useEntradas.ts
-
-// 1. Importamos 'keepPreviousData' para usar como placeholder
 import {
   useQuery,
   useMutation,
@@ -17,7 +14,7 @@ import {
 } from "@/services/EntradasService";
 import { EntradaCreatePayload } from "@/types/lancamentos";
 
-// Hook para buscar a lista de entradas
+// Hook pra buscar a lista de entradas com paginação
 export function useEntradas(pagination: {
   pageIndex: number;
   pageSize: number;
@@ -30,10 +27,11 @@ export function useEntradas(pagination: {
   });
 }
 
-// Hook para agrupar todas as mutações (criar, atualizar, deletar)
+// Hook que agrupa as mutações de entradas (criar, atualizar, deletar)
 export function useEntradaMutations() {
   const queryClient = useQueryClient();
 
+  // Mutação pra criar entrada
   const createMutation = useMutation({
     mutationFn: createEntrada,
     onSuccess: () => {
@@ -43,6 +41,7 @@ export function useEntradaMutations() {
     onError: (err: Error) => toast.error(`Erro ao criar: ${err.message}`),
   });
 
+  // Mutação pra atualizar entrada
   const updateMutation = useMutation({
     mutationFn: ({
       id,
@@ -58,6 +57,7 @@ export function useEntradaMutations() {
     onError: (err: Error) => toast.error(`Erro ao atualizar: ${err.message}`),
   });
 
+  // Mutação pra deletar entrada
   const deleteMutation = useMutation({
     mutationFn: deleteEntrada,
     onSuccess: () => {

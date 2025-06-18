@@ -19,13 +19,14 @@ import {
 } from "@/components/ui/card";
 import { useSmoothCountUp } from "@/hooks/use-smooth-count-up";
 
-// Simula skeleton loading
-function Skeleton({ className }) {
+// Componente simples pra mostrar um esqueleto de carregamento
+function Skeleton({ className }: { className: string }) {
   return (
     <div className={`animate-pulse rounded bg-muted h-7 w-32 ${className}`} />
   );
 }
 
+// Tipagem dos dados financeiros
 type FinanceData = {
   saldo: number;
   receitas: number;
@@ -33,24 +34,13 @@ type FinanceData = {
   fixos: number;
 };
 
-// Exemplo requisição
-// useEffect(() => {
-//   setLoading(true);
-//   axios.get("/api/dashboard").then(res => {
-//     setData(res.data);
-//   }).finally(() => setLoading(false));
-// }, []);
-
 export function SectionCards() {
-  // Estado dos dados da API
   const [data, setData] = useState<FinanceData | null>(null);
-  // Estado de loading
   const [loading, setLoading] = useState(true);
 
-  // Aqui você pode trocar para fetch/axios e consumir sua API
+  // Simula o carregamento dos dados da API
   useEffect(() => {
     setLoading(true);
-    // Simulação de chamada à API
     setTimeout(() => {
       setData({
         saldo: 1250,
@@ -60,10 +50,9 @@ export function SectionCards() {
       });
       setLoading(false);
     }, 1100);
-    // Se usar fetch: fetch('/api/dashboard').then(...).finally(() => setLoading(false))
   }, []);
 
-  // Se ainda está carregando ou não recebeu dados, mostra os skeletons
+  // Animações para os valores numéricos
   const saldoAnim = useSmoothCountUp(!data || loading ? 0 : data.saldo, 500, 2);
   const receitasAnim = useSmoothCountUp(
     !data || loading ? 0 : data.receitas,
@@ -79,7 +68,7 @@ export function SectionCards() {
 
   return (
     <div className="dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 font-sans">
-      {/* Saldo Final do Mês */}
+      {/* Card de Saldo Final do Mês */}
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Saldo projetado</CardDescription>
@@ -121,7 +110,7 @@ export function SectionCards() {
         </CardFooter>
       </Card>
 
-      {/* Total de Receitas */}
+      {/* Card de Total de Receitas */}
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Receitas totais</CardDescription>
@@ -163,7 +152,7 @@ export function SectionCards() {
         </CardFooter>
       </Card>
 
-      {/* Total de Despesas */}
+      {/* Card de Total de Despesas */}
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Despesas totais</CardDescription>
@@ -205,7 +194,7 @@ export function SectionCards() {
         </CardFooter>
       </Card>
 
-      {/* Percentual de Gastos Fixos */}
+      {/* Card de Percentual de Gastos Fixos */}
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Gastos fixos % renda</CardDescription>

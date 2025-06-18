@@ -6,7 +6,6 @@ import { ModeToggle } from "./mode-toggle";
 import { usePathname } from "next/navigation";
 
 function getPageTitle(pathname: string) {
-  // Exemplo básico; personalize conforme suas rotas
   switch (pathname) {
     case "/dashboard":
       return "Dashboard";

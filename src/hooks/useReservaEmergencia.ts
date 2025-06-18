@@ -10,10 +10,12 @@ import {
 export function useReservaEmergenciaMutations() {
   const queryClient = useQueryClient();
 
+  // Invalida o cache dos dados do dashboard
   const invalidateDashboard = () => {
     queryClient.invalidateQueries({ queryKey: ["dashboardData"] });
   };
 
+  // Mutação pra criar a reserva
   const createMutation = useMutation({
     mutationFn: createReserva,
     onSuccess: () => {
@@ -23,10 +25,11 @@ export function useReservaEmergenciaMutations() {
     onError: (err: Error) => toast.error(`Erro ao criar: ${err.message}`),
   });
 
+  // Mutação pra atualizar a reserva
   const updateMutation = useMutation({
     mutationFn: (payload: ReservaUpdatePayload) => updateReserva(payload),
     onSuccess: (data, variables) => {
-      // Mensagem customizada se o valor atual mudou (aporte) ou não (edição de meta)
+      // Verifica se foi um aporte ou só uma edição
       if (
         variables.valorAtual >
         (queryClient.getQueryData(["dashboardData"]) as any)?.reservaData
@@ -41,6 +44,7 @@ export function useReservaEmergenciaMutations() {
     onError: (err: Error) => toast.error(`Erro ao atualizar: ${err.message}`),
   });
 
+  // Mutação pra deletar a reserva
   const deleteMutation = useMutation({
     mutationFn: deleteReserva,
     onSuccess: () => {
@@ -49,8 +53,6 @@ export function useReservaEmergenciaMutations() {
     },
     onError: (err: Error) => toast.error(`Erro ao excluir: ${err.message}`),
   });
-
-  // REMOVIDO: aporteMutation não existe mais
 
   return {
     createReserva: createMutation.mutate,

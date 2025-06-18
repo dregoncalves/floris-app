@@ -30,13 +30,14 @@ export function DashboardCardGastosFixosRadial({
   percentual,
   isLoading,
 }: DashboardCardGastosFixosRadialProps) {
-  // Lógica de cor e texto
+  // Define a cor e o ícone padrão como "Ótimo"
   let fillColor = "var(--success)";
   let footerTextColorClass = "text-success";
   let icon = <PiggyBank className="size-6 text-success" />;
   let status = "Ótimo";
   let statusMessage = "Seus gastos fixos estão em um nível saudável!";
 
+  // Se o percentual for maior que 65, muda para "Crítico"
   if (percentual > 65) {
     fillColor = "var(--danger)";
     footerTextColorClass = "text-danger";
@@ -44,6 +45,7 @@ export function DashboardCardGastosFixosRadial({
     status = "Crítico";
     statusMessage = "Seus gastos fixos estão muito altos. Considere revisar!";
   } else if (percentual > 50) {
+    // Se o percentual for maior que 50 (e menor ou igual a 65), muda para "Atenção"
     fillColor = "var(--warning)";
     footerTextColorClass = "text-warning";
     icon = <AlertTriangle className="size-6 text-warning" />;
@@ -51,9 +53,10 @@ export function DashboardCardGastosFixosRadial({
     statusMessage = "Seus gastos fixos exigem atenção.";
   }
 
-  // Prepara os dados do gráfico
+  // Prepara os dados para o gráfico radial
   const chartData = [{ nome: "fixos", valor: percentual, fill: fillColor }];
 
+  // Configuração do gráfico
   const chartConfig = {
     valor: { label: "Percentual" },
     fixos: { label: "Gastos Fixos", color: fillColor },

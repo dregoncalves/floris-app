@@ -32,9 +32,6 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
     const password = formData.get("password") as string;
 
     try {
-      // Chamada única para o endpoint de registro.
-      // A API em /auth/register já cria o usuário, faz o login (setando os cookies)
-      // e retorna os dados do usuário criado.
       const response = await api.post<User>("/auth/register", {
         name,
         username,
@@ -42,7 +39,6 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
         password,
       });
 
-      // A função de login do contexto recebe os dados do usuário e cuida do redirecionamento.
       login(response.data);
     } catch (err: any) {
       setError(
