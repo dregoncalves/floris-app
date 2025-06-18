@@ -1,13 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  IconChartBar,
-  IconDashboard,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconSettings,
-} from "@tabler/icons-react";
+import { IconChartBar, IconSettings } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -22,6 +16,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { ArrowLeftRight, LayoutDashboard, PiggyBank } from "lucide-react";
+import Image from "next/image";
 
 const data = {
   user: {
@@ -49,8 +44,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Flori$ Inc.</span>
+                <Image
+                  src={"/plant-pot-teste.png"}
+                  width={20}
+                  height={20}
+                  alt="Floris Icon"
+                ></Image>
+                <span className="text-base font-semibold">Floris</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -59,10 +59,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain
           items={[
-            { title: "Dashboard", url: "#", icon: LayoutDashboard },
-            { title: "Lançamentos", url: "#", icon: ArrowLeftRight },
-            { title: "Metas", url: "#", icon: IconChartBar },
-            { title: "Reserva de Emergência", url: "#", icon: PiggyBank },
+            { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+            { title: "Lançamentos", url: "/lancamentos", icon: ArrowLeftRight },
+            { title: "Metas", url: "/metas", icon: IconChartBar },
+            {
+              title: "Reserva de Emergência",
+              url: "/reserva-emergencia",
+              icon: PiggyBank,
+            },
           ]}
         />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
