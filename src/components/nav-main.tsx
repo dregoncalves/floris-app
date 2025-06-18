@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  IconCirclePlusFilled,
-  IconMail,
-  IconChevronDown,
-} from "@tabler/icons-react";
+import { IconCirclePlusFilled, IconChevronDown } from "@tabler/icons-react";
 
-import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -14,14 +9,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Separator } from "@/components/ui/separator";
 
 export function NavMain({
   items,
@@ -29,54 +25,76 @@ export function NavMain({
   items: {
     title: string;
     url: string;
-    icon?: string; // para aceitar qualquer Icon
+    icon?: any;
   }[];
 }) {
-  // estado para o menu sanfona de lançamentos
+  const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
+
+  // Abre o submenu "Lançamentos" se a URL começa com "/lancamentos"
+  useEffect(() => {
+    if (pathname.startsWith("/lancamentos")) {
+      setOpen(true);
+    } else {
+      setOpen(false);
+    }
+  }, [pathname]);
 
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
+        {/* Botão de Entrada Rápida */}
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
               tooltip="Entrada Rápida"
-              className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+              className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/90 min-w-8 duration-200 ease-linear"
             >
               <IconCirclePlusFilled />
               <span>Entrada Rápida</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        {/* Menus principais */}
+
+        {/* Separador */}
+        <div className="px-4 py-2">
+          <Separator />
+        </div>
+
+        {/* Renderiza os itens do menu */}
         <SidebarMenu>
           {items.map((item) =>
             item.title === "Lançamentos" ? (
+              // Trata o item "Lançamentos" como um menu colapsável
               <SidebarMenuItem key={item.title}>
                 <Collapsible open={open} onOpenChange={setOpen}>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
-                      className="cursor-pointer"
+                      className={`cursor-pointer transition-all duration-300 ${
+                        pathname.startsWith("/lancamentos")
+                          ? "bg-black/10 dark:bg-white/10"
+                          : ""
+                      }`}
                       tooltip={item.title}
                     >
                       {item.icon && <item.icon />}
                       <span>{item.title}</span>
                       <IconChevronDown
-                        className={`ml-auto transition-transform ${
+                        className={`ml-auto transition-transform duration-300 ${
                           open ? "rotate-180" : ""
                         }`}
                       />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
+
                   <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
-                    <SidebarMenu className="pl-4 pr-2 w-full">
+                    <SidebarMenu className="pl-4 pr-2 pt-3 w-full">
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           asChild
                           className="w-full text-sm truncate"
                         >
-                          <Link href="#">Entradas</Link>
+                          <Link href="/lancamentos/entradas">Entradas</Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                       <SidebarMenuItem>
@@ -84,29 +102,27 @@ export function NavMain({
                           asChild
                           className="w-full text-sm truncate"
                         >
-                          <Link href="#">Saídas</Link>
+                          <Link href="/lancamentos/gastos">Gastos</Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
-                      {/* <SidebarMenuItem>
-                        <SidebarMenuButton
-                          asChild
-                          className="w-full text-sm truncate"
-                        >
-                          <Link href="#">Simular</Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem> */}
                     </SidebarMenu>
                   </CollapsibleContent>
                 </Collapsible>
               </SidebarMenuItem>
             ) : (
+              // Renderiza outros itens do menu
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
-                  className="cursor-pointer"
+                  asChild
                   tooltip={item.title}
+                  className={`cursor-pointer transition-all duration-300 ${
+                    pathname === item.url ? "bg-black/10 dark:bg-white/10" : ""
+                  }`}
                 >
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
+                  <Link href={item.url}>
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )

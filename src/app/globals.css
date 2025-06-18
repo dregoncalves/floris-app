@@ -66,7 +66,7 @@
 }
 
 :root {
-  --radius: 1rem;
+  --radius: 0.625rem;
   --background: oklch(1 0 0); /* Branco */
   --foreground: oklch(0 0 0); /* Preto */
   --card: oklch(1 0 0); /* Branco */
@@ -105,7 +105,7 @@
   --success: oklch(0.75 0.13 145); /* Verde padrão */
   --success-foreground: oklch(0.17 0.12 140); /* Verde escuro */
   --warning: oklch(0.65 0.08 85); /* Amarelo */
-  --warning-foreground: oklch(0.26 0.06 95); /* Amarelo escuro */
+  --warning-foreground: oklch(1 0 0); /* Amarelo escuro */
   --danger: oklch(0.7 0.18 29.2); /* Vermelho */
   --danger-foreground: oklch(1 0 0); /* Branco */
   --info: oklch(0.75 0.17 230); /* Azul claro */
@@ -114,6 +114,7 @@
 
 /* DARK THEME */
 .dark {
+  --radius: 0.625rem;
   --background: oklch(0 0 0); /* Preto */
   --foreground: oklch(1 0 0); /* Branco */
   --card: oklch(0.15 0 0); /* Cinza bem escuro */
@@ -197,13 +198,13 @@
   --destructive-foreground: oklch(0.97 0.018 0);
   --destructive-border: oklch(0.43 0.24 29.2);
   --success: oklch(0.71 0.097 111.7); /* Verde claro */
-  --success-foreground: oklch(0.18 0.12 140); /* Verde escuro */
+  --success-foreground: oklch(0.97 0.018 0); /* Verde escuro */
   --warning: oklch(0.93 0.12 95); /* Amarelo claro */
   --warning-foreground: oklch(0.32 0.08 95); /* Amarelo escuro */
   --danger: oklch(0.67 0.18 29.2); /* Vermelho Ghibli */
   --danger-foreground: oklch(0.98 0.005 0); /* Branco */
-  --info: oklch(0.68 0.16 184.9); /* Azul leve Ghibli */
-  --info-foreground: oklch(0.22 0.1 230);
+  --info: #4281a4; /* Azul leve Ghibli */
+  --info-foreground: oklch(0.97 0.018 0);
 }
 
 /* --------- TEMA COFFE GHIBLI --------- */
